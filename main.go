@@ -6,16 +6,18 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/AryanBhatDev/CeleryClone/internal/database"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
-	"github.com/AryanBhatDev/CeleryClone/internal/database"
 	_ "github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 )
 
 
 type apiConfig struct{
 	DB *database.Queries
+	Redis *redis.Client
 }
 
 
@@ -49,11 +51,13 @@ func main(){
 
 	queries := database.New(conn)
 
-
+	
 	apiCfg := apiConfig{
 		DB : queries,
+		Redis: GetRedisClient(),
 	}
-
+	
+	go apiCfg.signupWorker()
 
 	router := chi.NewRouter()
 
@@ -66,7 +70,7 @@ func main(){
 
 	v1Router := chi.NewRouter()
 
-	v1Router.Post("/user/signup",apiCfg.handlerCreateUser)
+	v1Router.Post("/user/signup",apiCfg.handlerPushCreateUser)
 
 	router.Mount("/api/v1",v1Router)
 
@@ -80,6 +84,5 @@ func main(){
 	if err != nil{
 		log.Fatal("Error while serving the http client",err)
 	}
-
 
 }

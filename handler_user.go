@@ -1,17 +1,19 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
-	"github.com/AryanBhatDev/CeleryClone/internal/database"
+	"github.com/AryanBhatDev/CeleryClone/internal/types"
 	"github.com/google/uuid"
 )
 
 
-func (apiCfg *apiConfig)handlerCreateUser(w http.ResponseWriter, r *http.Request){
+func (apiCfg *apiConfig)handlerPushCreateUser(w http.ResponseWriter, r *http.Request){
 	type parameters struct{
 		Name string `json:"name"`
 		Email string `json:"email"`
@@ -29,9 +31,9 @@ func (apiCfg *apiConfig)handlerCreateUser(w http.ResponseWriter, r *http.Request
 		return 
 	}
 
-	user, err := apiCfg.DB.CreateUser(
-		r.Context(),
-		database.CreateUserParams{
+	task := types.CreateUserTask{
+		TaskType: "create_user",
+		Payload: types.UserPayload{
 			ID: uuid.New(),
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -39,12 +41,23 @@ func (apiCfg *apiConfig)handlerCreateUser(w http.ResponseWriter, r *http.Request
 			Email: params.Email,
 			Password: params.Password,
 		},
-	)
+	}
+
+	taskJson, err := json.Marshal(task)
 
 	if err != nil{
-		respondWithError(w, 400, fmt.Sprintf("Error while creating user: %v",err))
+		respondWithError(w, 400, fmt.Sprintf("Error while creating task: %v",err))
 		return
 	}
 
-	respondWithJson(w, 201, databaseUserToUser(user))
+	ctx := context.Background()
+
+	err = apiCfg.Redis.LPush(ctx,"user_signup_queue",taskJson).Err()
+	log.Println("after push")
+	if err != nil{
+		respondWithError(w, 500, fmt.Sprintf("Failed to push to queue: %v",err))
+		return
+	}
+
+	respondWithJson(w, 201, "Signed up")
 }
