@@ -66,7 +66,7 @@ func main(){
 
 	v1Router := chi.NewRouter()
 
-	v1Router.Get("/user/signup",apiCfg.handlerCreateUser)
+	v1Router.Post("/user/signup",apiCfg.handlerCreateUser)
 
 	router.Mount("/api/v1",v1Router)
 
