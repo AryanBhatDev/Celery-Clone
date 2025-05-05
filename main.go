@@ -29,7 +29,6 @@ func main(){
 		log.Fatal("Env file not found")
 	}
 
-	GetRedisClient()
 
 	port := os.Getenv("PORT")
 
@@ -71,6 +70,7 @@ func main(){
 	v1Router := chi.NewRouter()
 
 	v1Router.Post("/user/signup",apiCfg.handlerPushCreateUser)
+	v1Router.Post("/user/signup/status",apiCfg.handlerTaskStatus)
 
 	router.Mount("/api/v1",v1Router)
 

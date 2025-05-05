@@ -37,6 +37,8 @@ func (apiCfg *apiConfig)handlerPushCreateUser(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	taskId := uuid.New().String()
+
 	task := types.CreateUserTask{
 		TaskType: "create_user",
 		Payload: types.UserPayload{
@@ -64,6 +66,56 @@ func (apiCfg *apiConfig)handlerPushCreateUser(w http.ResponseWriter, r *http.Req
 		respondWithError(w, 500, fmt.Sprintf("Failed to push to queue: %v",err))
 		return
 	}
+	apiCfg.Redis.Set(ctx,fmt.Sprintf("task_status:%s",taskId),"pending",0)
 
-	respondWithJson(w, 201, "Signed up")
+	type SignupResponse struct{
+		Message string `json:"message"`
+		TaskId string   `json:"task_id"`	
+	}
+
+	respondWithJson(w, 201, SignupResponse{
+		Message: "Signed up",
+		TaskId: taskId,
+	})
+}
+
+func (apiCfg *apiConfig) handlerTaskStatus(w http.ResponseWriter, r *http.Request){
+	ctx := context.Background()
+
+	taskId := r.URL.Query().Get("task_id")
+
+	if taskId == "" {
+		respondWithError(w, 400, "Missing task_id in query parameters")
+		return
+	}
+
+	status, err := apiCfg.Redis.Get(ctx,fmt.Sprintf("task_status:%s",taskId)).Result()
+
+	if err != nil {
+		respondWithError(w, 404, fmt.Sprintf("Error while fetching task status: %v",err))
+		return
+	}
+
+	type RedisResult struct{}
+
+	result := RedisResult{}
+
+	if status == "completed"{
+		jsonStr, err := apiCfg.Redis.Get(ctx,fmt.Sprintf("task_result:%s",taskId)).Result()
+
+		if err != nil {
+			respondWithError(w, 404, fmt.Sprintf("Error while fetching task result: %v",err))
+			return
+		}
+		
+		json.Unmarshal([]byte(jsonStr), &result)
+	}
+
+	type ReturnResult struct{
+		Result RedisResult `json:"result"`
+	}
+
+	respondWithJson(w, 200, ReturnResult{
+		Result: result,
+	})
 }

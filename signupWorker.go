@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"log"
 	"time"
@@ -40,7 +41,7 @@ func (apiCfg *apiConfig) signupWorker() {
 		}
 
 
-		_, err = apiCfg.DB.CreateUser(ctx, database.CreateUserParams{
+		user, err := apiCfg.DB.CreateUser(ctx, database.CreateUserParams{
 			ID:        task.Payload.ID,
 			Name:      task.Payload.Name,
 			Email:     task.Payload.Email,
@@ -54,5 +55,17 @@ func (apiCfg *apiConfig) signupWorker() {
 			log.Printf("Error inserting user into DB: %v", err)
 			continue
 		}
+
+		userJson, err := json.Marshal(user)
+
+		if err != nil {
+			log.Printf("Error while marshaling : %v", err)
+			continue
+		}
+ 
+
+		apiCfg.Redis.Set(ctx, fmt.Sprintf("task_result:%s", task.Payload.ID.String()), userJson, 0)
+		apiCfg.Redis.Set(ctx, fmt.Sprintf("task_status:%s", task.Payload.ID.String()), "completed", 0)
+
 	}
 }

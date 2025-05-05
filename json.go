@@ -7,10 +7,6 @@ import (
 )
 
 
-
-
-
-
 func respondWithJson(w http.ResponseWriter, code int , payload interface{}){
 	data, err := json.Marshal(payload)
 
