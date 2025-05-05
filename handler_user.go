@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"time"
-
 	"github.com/AryanBhatDev/CeleryClone/internal/types"
 	"github.com/google/uuid"
 )
@@ -29,6 +28,14 @@ func (apiCfg *apiConfig)handlerPushCreateUser(w http.ResponseWriter, r *http.Req
 	if err != nil{
 		respondWithError(w,400,fmt.Sprintf("Error while decoding request body:%v",err))
 		return 
+	}
+
+
+	_, err = apiCfg.DB.GetUser(r.Context(),params.Email)
+
+	if err == nil{
+		respondWithError(w,409,fmt.Sprintf("Email is already taken:%v",err))
+		return
 	}
 
 	task := types.CreateUserTask{
