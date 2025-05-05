@@ -15,7 +15,7 @@ import (
 func (apiCfg *apiConfig) signupWorker() {
 	ctx := context.Background()
 	log.Print("worker started")
-	for range 10000{
+	for {
 		result, err := apiCfg.Redis.BRPop(ctx, 0*time.Second, "user_signup_queue").Result()
 		if err != nil {
 			log.Printf("Error fetching from Redis queue: %v", err)
