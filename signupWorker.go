@@ -14,7 +14,7 @@ import (
 
 func (apiCfg *apiConfig) signupWorker() {
 	ctx := context.Background()
-	log.Print("worker started")
+
 	for {
 		result, err := apiCfg.Redis.BRPop(ctx, 0*time.Second, "user_signup_queue").Result()
 		if err != nil {
@@ -54,7 +54,5 @@ func (apiCfg *apiConfig) signupWorker() {
 			log.Printf("Error inserting user into DB: %v", err)
 			continue
 		}
-
-		log.Printf("User %s created successfully.", task.Payload.Email)
 	}
 }

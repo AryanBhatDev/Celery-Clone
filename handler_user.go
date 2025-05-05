@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 	"github.com/AryanBhatDev/CeleryClone/internal/types"
@@ -60,7 +59,7 @@ func (apiCfg *apiConfig)handlerPushCreateUser(w http.ResponseWriter, r *http.Req
 	ctx := context.Background()
 
 	err = apiCfg.Redis.LPush(ctx,"user_signup_queue",taskJson).Err()
-	log.Println("after push")
+
 	if err != nil{
 		respondWithError(w, 500, fmt.Sprintf("Failed to push to queue: %v",err))
 		return
