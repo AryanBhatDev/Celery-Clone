@@ -9,9 +9,14 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
-	"github.com/pressly/goose/v3/database"
+	"github.com/AryanBhatDev/CeleryClone/internal/database"
+	_ "github.com/lib/pq"
 )
 
+
+type apiConfig struct{
+	DB *database.Queries
+}
 
 
 func main(){
@@ -42,6 +47,12 @@ func main(){
 		log.Fatal("Error connecting to db")
 	}
 
+	queries := database.New(conn)
+
+
+	apiCfg := apiConfig{
+		DB : queries,
+	}
 
 
 	router := chi.NewRouter()
@@ -55,7 +66,7 @@ func main(){
 
 	v1Router := chi.NewRouter()
 
-	v1Router.Get("/user/signup",handlerCreateUser)
+	v1Router.Get("/user/signup",apiCfg.handlerCreateUser)
 
 	router.Mount("/api/v1",v1Router)
 
