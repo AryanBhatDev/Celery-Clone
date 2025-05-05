@@ -37,8 +37,6 @@ func (apiCfg *apiConfig)handlerPushCreateUser(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	taskId := uuid.New().String()
-
 	task := types.CreateUserTask{
 		TaskType: "create_user",
 		Payload: types.UserPayload{
@@ -50,6 +48,8 @@ func (apiCfg *apiConfig)handlerPushCreateUser(w http.ResponseWriter, r *http.Req
 			Password: params.Password,
 		},
 	}
+
+	taskId := task.Payload.ID.String()
 
 	taskJson, err := json.Marshal(task)
 
@@ -96,9 +96,8 @@ func (apiCfg *apiConfig) handlerTaskStatus(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	type RedisResult struct{}
 
-	result := RedisResult{}
+	result := types.UserPayload{}
 
 	if status == "completed"{
 		jsonStr, err := apiCfg.Redis.Get(ctx,fmt.Sprintf("task_result:%s",taskId)).Result()
@@ -109,13 +108,10 @@ func (apiCfg *apiConfig) handlerTaskStatus(w http.ResponseWriter, r *http.Reques
 		}
 		
 		json.Unmarshal([]byte(jsonStr), &result)
-	}
 
-	type ReturnResult struct{
-		Result RedisResult `json:"result"`
+		respondWithJson(w, 200,databaseUserToUser(result))
+	}else{
+		respondWithJson(w,200,fmt.Sprintf("status:%v",status))
 	}
-
-	respondWithJson(w, 200, ReturnResult{
-		Result: result,
-	})
+	
 }

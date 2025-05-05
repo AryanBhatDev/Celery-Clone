@@ -39,8 +39,12 @@ func (apiCfg *apiConfig) signupWorker() {
 			log.Printf("Unknown task type: %s", task.TaskType)
 			continue
 		}
+		fmt.Println("going to sleep for 20 secs")
 
+		time.Sleep(20*time.Second)
 
+		fmt.Println("awake now")
+		
 		user, err := apiCfg.DB.CreateUser(ctx, database.CreateUserParams{
 			ID:        task.Payload.ID,
 			Name:      task.Payload.Name,
@@ -50,7 +54,8 @@ func (apiCfg *apiConfig) signupWorker() {
 			UpdatedAt: task.Payload.UpdatedAt,
 		})
 
-		
+		fmt.Println("after db entry")
+
 		if err != nil {
 			log.Printf("Error inserting user into DB: %v", err)
 			continue
