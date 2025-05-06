@@ -53,11 +53,6 @@ func (apiCfg *apiConfig)handlerPushCreateUser(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err != nil{
-		respondWithError(w,401,fmt.Sprintf("Incorrect paramss:%v",err))
-		return
-	}
-
 	task := types.CreateUserTask{
 		TaskType: "create_user",
 		Payload: types.UserPayload{
@@ -135,4 +130,56 @@ func (apiCfg *apiConfig) handlerTaskStatus(w http.ResponseWriter, r *http.Reques
 		respondWithJson(w,200,fmt.Sprintf("status:%v",status))
 	}
 	
+}
+
+func (apiCfg *apiConfig) handlerUserSignin(w http.ResponseWriter, r *http.Request){
+	
+	type parameters struct{
+		Name string `json:"name"`
+		Email string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	params := parameters{}
+
+	decoder := json.NewDecoder(r.Body)
+
+	err := decoder.Decode(&params)
+
+	if err != nil{
+		respondWithError(w,400,fmt.Sprintf("Error while decoding request body:%v",err))
+		return 
+	}
+
+	if !govalidator.IsEmail(params.Email) {
+		respondWithError(w,400,fmt.Sprintf("Invalid email format:%v",err))
+		return
+	}
+	if len(params.Password) < 8 {
+		respondWithError(w,400,fmt.Sprintf("Password should be more than 8 characters long:%v",err))
+		return
+	}
+
+	user, err := apiCfg.DB.GetUser(r.Context(),params.Email)
+
+	if err != nil{
+		respondWithError(w,401,fmt.Sprintf("User not found:%v",err))
+		return
+	}
+
+	isCorrectPassword := comparePassword(params.Password,user.Password)
+
+	if !isCorrectPassword{
+		respondWithError(w,403,fmt.Sprintf("Incorrect password:%v",err))
+		return
+	}
+
+	type signin struct{
+		Message string `json:"message"`
+	}
+
+	respondWithJson(w,200,signin{
+		Message: "Signed in",
+	})
+
 }

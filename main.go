@@ -74,7 +74,7 @@ func main(){
 
 	v1Router.Post("/user/signup",apiCfg.handlerPushCreateUser)
 	v1Router.Post("/user/signup/status",apiCfg.handlerTaskStatus)
-
+	v1Router.Post("/user/signin",apiCfg.handlerUserSignin)
 	router.Mount("/api/v1",v1Router)
 
 	srv := &http.Server{
