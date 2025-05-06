@@ -61,6 +61,12 @@ func (apiCfg *apiConfig) signupWorker() {
 			continue
 		}
 
+		err = apiCfg.EmailSender.SendWelcomeEmail(user.Email, user.Name)
+
+		if err != nil {
+			log.Printf("Failed to send welcome email: %v", err)
+		}
+
 		userJson, err := json.Marshal(user)
 
 		if err != nil {
@@ -68,7 +74,6 @@ func (apiCfg *apiConfig) signupWorker() {
 			continue
 		}
  
-
 		apiCfg.Redis.Set(ctx, fmt.Sprintf("task_result:%s", task.Payload.ID.String()), userJson, 0)
 		apiCfg.Redis.Set(ctx, fmt.Sprintf("task_status:%s", task.Payload.ID.String()), "completed", 0)
 

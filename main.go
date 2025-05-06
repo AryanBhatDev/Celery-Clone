@@ -18,6 +18,7 @@ import (
 type apiConfig struct{
 	DB *database.Queries
 	Redis *redis.Client
+	EmailSender *EmailSender
 }
 
 
@@ -50,10 +51,12 @@ func main(){
 
 	queries := database.New(conn)
 
+
 	
 	apiCfg := apiConfig{
 		DB : queries,
 		Redis: GetRedisClient(),
+		EmailSender: NewEmailSender(),
 	}
 	
 	go apiCfg.signupWorker()
