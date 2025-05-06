@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
 	"github.com/AryanBhatDev/CeleryClone/internal/types"
+	"github.com/asaskevich/govalidator"
+
 	"github.com/google/uuid"
 )
-
 
 func (apiCfg *apiConfig)handlerPushCreateUser(w http.ResponseWriter, r *http.Request){
 	type parameters struct{
@@ -34,6 +36,25 @@ func (apiCfg *apiConfig)handlerPushCreateUser(w http.ResponseWriter, r *http.Req
 
 	if err == nil{
 		respondWithError(w,409,fmt.Sprintf("Email is already taken:%v",err))
+		return
+	}
+
+
+	if !govalidator.StringLength(params.Name, "3", "20") {
+		respondWithError(w,400,fmt.Sprintf("Name should be minimum 3 characters and 20 characters:%v",err))
+		return
+	}
+	if !govalidator.IsEmail(params.Email) {
+		respondWithError(w,400,fmt.Sprintf("Invalid email format:%v",err))
+		return
+	}
+	if len(params.Password) < 8 {
+		respondWithError(w,400,fmt.Sprintf("Password should be more than 8 characters long:%v",err))
+		return
+	}
+
+	if err != nil{
+		respondWithError(w,401,fmt.Sprintf("Incorrect paramss:%v",err))
 		return
 	}
 

@@ -44,12 +44,14 @@ func (apiCfg *apiConfig) signupWorker() {
 		time.Sleep(20*time.Second)
 
 		fmt.Println("awake now")
+
+		hashedPassword := encryptPassword(task.Payload.Password)
 		
 		user, err := apiCfg.DB.CreateUser(ctx, database.CreateUserParams{
 			ID:        task.Payload.ID,
 			Name:      task.Payload.Name,
 			Email:     task.Payload.Email,
-			Password:  task.Payload.Password,
+			Password:  hashedPassword,
 			CreatedAt: task.Payload.CreatedAt,
 			UpdatedAt: task.Payload.UpdatedAt,
 		})
