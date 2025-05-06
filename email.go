@@ -1,13 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"log"
 	"net/smtp"
 	"os"
+
 )
-
-
 
 type EmailSender struct {
 	SMTPServer   string
@@ -40,32 +41,50 @@ func NewEmailSender() *EmailSender{
 	return emailSender
 }
 
-func (eSender *EmailSender) SendWelcomeEmail(to, name string) error{
-	auth := smtp.PlainAuth("",eSender.SMTPUser,eSender.SMTPPassword,eSender.SMTPServer)
+func (eSender *EmailSender) SendWelcomeEmail(to, name string) error {
+	auth := smtp.PlainAuth("", eSender.SMTPUser, eSender.SMTPPassword, eSender.SMTPServer)
 
-	subject := "Welcome to Our Service!"
-    body := fmt.Sprintf("Hi %s,\n\nThank you for signing up with our service!\n\nBest regards,\nThe Team", name)
-    
-    msg := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s", 
-        eSender.FromEmail, 
-        to, 
-        subject, 
-        body)
+	tmpl, err := template.ParseFiles("email.html")
+	if err != nil {
+		return fmt.Errorf("failed to parse template: %w", err)
+	}
 
+	var body bytes.Buffer
 
-	err := smtp.SendMail(
+	body.Write([]byte("From: " + eSender.FromEmail + "\r\n"))
+	body.Write([]byte("To: " + to + "\r\n"))
+	body.Write([]byte("Subject: Welcome\r\n"))
+	body.Write([]byte("MIME-Version: 1.0\r\n"))
+	body.Write([]byte("Content-Type: text/html; charset=\"UTF-8\"\r\n"))
+	body.Write([]byte("\r\n"))
+
+	err = tmpl.Execute(&body, struct {
+		Name    string
+		Email   string
+		Message string
+	}{
+		Name:    name,
+		Email:   to,
+		Message: "You're now a part of something beautiful!",
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to execute template: %w", err)
+	}
+
+	err = smtp.SendMail(
 		eSender.SMTPServer+":"+eSender.SMTPPort,
 		auth,
 		eSender.FromEmail,
 		[]string{to},
-		[]byte(msg),
+		body.Bytes(),
 	)
 
 	if err != nil {
-        log.Printf("SMTP error details: %v", err)
-        return fmt.Errorf("failed to send email: %w", err)
-    }
-    
-    log.Println("Email sent successfully")
-    return nil
+		log.Printf("SMTP error details: %v", err)
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+
+	log.Println("Email sent successfully")
+	return nil
 }
